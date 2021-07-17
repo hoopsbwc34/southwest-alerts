@@ -12,8 +12,9 @@ import asyncio
 from pyppeteer import launch
 from pyppeteer.network_manager import Request
 
-from southwestalerts.southwest import Southwest
-from southwestalerts import settings
+import southwestfile
+import settings
+import notifier
 
 
 async def catch_response(response):
@@ -132,7 +133,7 @@ async def login_get_headers(url, username, password):
 
 
 def check_for_price_drops(username, password, email, headers, cookies, account):
-    southwest = Southwest(username, password, headers, cookies, account)
+    southwest = southwestfile.Southwest(username, password, headers, cookies, account)
     for trip in southwest.get_upcoming_trips()['upcomingTripsPage']:
         # for flight in trip['_links']:
             passenger = trip['_links']['viewReservationViewPage']['query']
@@ -258,14 +259,15 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
             logging.info(message)
             if matching_flights_price > 0 and refund_amount > 0:
                 logging.info('Sending email for price drop')
-                resp = requests.post(
-                    'https://api.mailgun.net/v3/{}/messages'.format(settings.mailgun_domain),
-                    auth=('api', settings.mailgun_api_key),
-                    data={'from': 'Southwest Alerts <southwest-alerts@{}>'.format(settings.mailgun_domain),
-                          'to': [email],
-                          'subject': 'Southwest Price Drop Alert',
-                          'text': message})
-                assert resp.status_code == 200
+                sendNotification(currency, record_locator, origin_airport, destination_airport, departure_date)
+#                resp = requests.post(
+#                   'https://api.mailgun.net/v3/{}/messages'.format(settings.mailgun_domain),
+#                   auth=('api', settings.mailgun_api_key),
+#                   data={'from': 'Southwest Alerts <southwest-alerts@{}>'.format(settings.mailgun_domain),
+#                         'to': [email],
+#                         'subject': 'Southwest Price Drop Alert',
+#                         'text': message})
+#               assert resp.status_code == 200
 
 
 if __name__ == '__main__':
