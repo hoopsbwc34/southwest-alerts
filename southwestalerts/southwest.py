@@ -64,6 +64,8 @@ class Southwest(object):
             last_name=last_name
         )
         temp = self._session.get(url)
+        if not (temp['viewReservationViewPage']['greyBoxMessage'] is None):
+            return None
         url = '/api/mobile-air-booking/v1/mobile-air-booking/page/flights/cancel-bound/{record_locator}?passenger-search-token={token}'.format(
             record_locator=record_locator,
             token=temp['viewReservationViewPage']['_links']['cancelBound']['query']['passenger-search-token']

@@ -141,6 +141,8 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
             logging.info('Processing: %s', record_locator)
             # try:
             cancellation_details = southwest.get_cancellation_details(record_locator, passenger['first-name'], passenger['last-name'])
+            if cancellation_details is None:
+                continue
             if cancellation_details['cancelRefundQuotePage']['refundableFunds'] is None:
                 cancellation_details['cancelRefundQuotePage']['refundableFunds'] = {}
                 cancellation_details['cancelRefundQuotePage']['refundableFunds']['amount'] = 0
