@@ -182,7 +182,11 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                          logging.info('NO available flights due to error')
                          continue
                     # Find that the flight that matches the purchased flight
-                    matching_flight = next(f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time)
+                    matching_flight = next((f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time), None)
+                    if matching_flight is None:
+                        # no matching flight, schedule change?
+                        logging.info('No identical flight, schedule change?')
+                        continue 
                     if matching_flight['fares'] is None:
                         logging.info('This flight is not available for comparison, possible reason: %s', matching_flight['reasonIfUnavailable'])
                         break
@@ -236,7 +240,11 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                     logging.info('NO available flights due to error')
                     continue
                 # Find that the flight that matches the purchased flight
-                matching_flight = next(f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time)
+                matching_flight = next((f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time), None)
+                if matching_flight is None:
+                    # no matching flight, schedule change?
+                    logging.info('No identical flight, schedule change?')
+                    continue 
                 if matching_flight['fares'] is None:
                     logging.info('This flight is not available for comparison, possible reason: %s',
                                  matching_flight['reasonIfUnavailable'])
