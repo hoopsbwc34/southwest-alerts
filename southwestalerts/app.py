@@ -142,6 +142,7 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
             # try:
             cancellation_details = southwest.get_cancellation_details(record_locator, passenger['first-name'], passenger['last-name'])
             if cancellation_details is None:
+                logging.info('Grey Box Message (ie. companion), skipping  %s', record_locator)
                 continue
             if cancellation_details['cancelRefundQuotePage']['refundableFunds'] is None:
                 cancellation_details['cancelRefundQuotePage']['refundableFunds'] = {}
@@ -173,7 +174,9 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                         origin_airport,
                         destination_airport
                     )
-
+                    if available is None:
+                         logging.info('NO available flights due to error')
+                         continue
                     # Find that the flight that matches the purchased flight
                     matching_flight = next(f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time)
                     if matching_flight['fares'] is None:
@@ -225,6 +228,9 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                         origin_airport,
                         destination_airport
                     )
+                if available is None:
+                    logging.info('NO available flights due to error')
+                    continue
                 # Find that the flight that matches the purchased flight
                 matching_flight = next(f for f in available['flightShoppingPage']['outboundPage']['cards'] if f['departureTime'] == departure_time and f['arrivalTime'] == arrival_time)
                 if matching_flight['fares'] is None:
@@ -263,9 +269,9 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                 currency=cancellation_details['cancelRefundQuotePage']['tripTotals'][0]['currencyCode']
             )
             logging.info(message)
-            if matching_flights_price > 0 and refund_amount > 0:
+            if matching_flights_price > 0 and refund_amount >= 0:
                 logging.info('Sending email for price drop')
-                sendNotification(currency, record_locator, origin_airport, destination_airport, departure_date)
+                notifier.sendNotification(refund_amount, record_locator, origin_airport, destination_airport, departure_date)
 #                resp = requests.post(
 #                   'https://api.mailgun.net/v3/{}/messages'.format(settings.mailgun_domain),
 #                   auth=('api', settings.mailgun_api_key),

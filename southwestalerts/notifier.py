@@ -1,6 +1,6 @@
 import configparser
 from datetime import datetime
-from twilio.rest import TwilioRestClient
+from twilio.rest import Client
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('/home/matt/southwest-alerts/southwestalerts/config.ini')
@@ -17,13 +17,12 @@ def sendNotification(savings, locator, depart, arrive, departure_date):
     print("[%s] Found a deal from %s to %s on %s. Savings: %s. Locator: %s." % (
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         depart, arrive, departure_date,savings, locator))
-    client = TwilioRestClient(ACCOUNT_SID, AUTH_TOKEN)
+    client = Client(ACCOUNT_SID, AUTH_TOKEN)
     client.messages.create(
         to=TO_NUMBER,
         from_=FROM_NUMBER,
-        body="[%s] Found a deal from %s to %s on %s. Max Total: %s. Current Total: %s" % (
+        body="[%s] Found a deal from %s to %s on %s. Savings: %s. Locator: %s." % (
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            depart, arrive, departure_date, max_price,
-            str(real_total)))
+            depart, arrive, departure_date, savings, locator ))
 
     print("[%s] Text message sent!" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
