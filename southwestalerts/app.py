@@ -153,10 +153,14 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
             if quitloop:
                 continue
             logging.info('Processing: %s', record_locator)
+            #if cancellation_details['cancelRefundQuotePage']['headerMessage']['icon'] == 'WARNING':
+             #   logging.info("There appears to be a problem with this reservation and/or it is not ticketed.  Check it on southwest.com.  Skipping.")
+              #  continue
             # try:
             cancellation_details = southwest.get_cancellation_details(record_locator, passenger['first-name'], passenger['last-name'])
             if cancellation_details is None:
                 logging.info('Grey Box Message (ie. companion), skipping  %s', record_locator)
+            if cancellation_details.get('message') is not None:
                 continue
             if cancellation_details['cancelRefundQuotePage']['refundableFunds'] is None:
                 cancellation_details['cancelRefundQuotePage']['refundableFunds'] = {}
@@ -180,13 +184,14 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                     departure_time = origination_destination['departureTime']
                     # arrival_datetime = origination_destination['segments'][-1]['arrivalDateTime'].split('.000')[0][:-3]
                     arrival_time = origination_destination['arrivalTime']
-
+                    pass_num = len(cancellation_details['cancelRefundQuotePage']['passengers'])
                     origin_airport = origination_destination['departureAirportCode']
                     destination_airport = origination_destination['arrivalAirportCode']
                     available = southwest.get_available_flights(
                         departure_date,
                         origin_airport,
-                        destination_airport
+                        destination_airport,
+                        pass_num
                     )
                     if available is None:
                          logging.info('NO available flights due to error')
@@ -238,13 +243,14 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                     departure_time = origination_destination['departureTime']
                     #arrival_datetime = origination_destination['segments'][-1]['arrivalDateTime'].split('.000')[0][:-3]
                     arrival_time = origination_destination['arrivalTime']
-
+                    pass_num = len(cancellation_details['cancelRefundQuotePage']['passengers'])
                     origin_airport = origination_destination['departureAirportCode']
                     destination_airport = origination_destination['arrivalAirportCode']
                     available = southwest.get_available_flights_dollars(
                         departure_date,
                         origin_airport,
-                        destination_airport
+                        destination_airport,
+                        pass_num
                     )
                 if available is None:
                     logging.info('NO available flights due to error')

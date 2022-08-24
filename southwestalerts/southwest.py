@@ -68,32 +68,37 @@ class Southwest(object):
             return None
         url = '/api/mobile-air-booking/v1/mobile-air-booking/page/flights/cancel-bound/{record_locator}?passenger-search-token={token}'.format(
             record_locator=record_locator,
-            token=temp['viewReservationViewPage']['_links']['cancelBound']['query']['passenger-search-token']
+            token=temp['viewReservationViewPage']['_links']['contactInformation']['query']['passenger-search-token']
         )
         temp = self._session.get(url)
         url = '/api/mobile-air-booking/v1/mobile-air-booking/page/flights/cancel/refund-quote/{record_locator}'.format(
             record_locator=record_locator
         )
-        payload = temp['viewForCancelBoundPage']['_links']['refundQuote']['body']
+        try:
+            payload = temp['viewForCancelBoundPage']['_links']['refundQuote']['body']
+        except KeyError:
+            return temp
         return self._session.post(url, payload)
 
 
-    def get_available_flights(self, departure_date, origin_airport, destination_airport, currency='Points'):
-        url = '/api/mobile-air-shopping/v1/mobile-air-shopping/page/flights/products?origination-airport={origin_airport}&destination-airport={destination_airport}&departure-date={departure_date}&number-adult-passengers=1&currency=PTS'.format(
+    def get_available_flights(self, departure_date, origin_airport, destination_airport, pass_num, currency='Points'):
+        url = '/api/mobile-air-shopping/v1/mobile-air-shopping/page/flights/products?origination-airport={origin_airport}&destination-airport={destination_airport}&departure-date={departure_date}&number-adult-passengers={pass_num}&currency=PTS'.format(
             origin_airport=origin_airport,
             destination_airport=destination_airport,
-            departure_date=departure_date
+            departure_date=departure_date,
+            pass_num=pass_num
         )
         #uurl = '{}{}'.format(BASE_URL, url)
         #resp = requests.get(uurl, headers=self._get_headers_all(self.headers))
         #return resp.json()
         return self._session.get(url)
 
-    def get_available_flights_dollars(self, departure_date, origin_airport, destination_airport):
-        url = '/api/mobile-air-shopping/v1/mobile-air-shopping/page/flights/products?origination-airport={origin_airport}&destination-airport={destination_airport}&departure-date={departure_date}&number-adult-passengers=1&currency=USD'.format(
+    def get_available_flights_dollars(self, departure_date, origin_airport, destination_airport, pass_num):
+        url = '/api/mobile-air-shopping/v1/mobile-air-shopping/page/flights/products?origination-airport={origin_airport}&destination-airport={destination_airport}&departure-date={departure_date}&number-adult-passengers={pass_num}&currency=USD'.format(
             origin_airport=origin_airport,
             destination_airport=destination_airport,
-            departure_date=departure_date
+            departure_date=departure_date,
+            pass_num=pass_num
         )
         return self._session.get(url)
 
@@ -127,7 +132,7 @@ class _SouthwestSession():
             #resp = requests.get(self._get_url(path), headers=self._get_headers_all(self.headers))
             #resp = requests.get(self._get_url(path), headers=self._get_headers_all(self.headers))
             resp = self._session.get(self._get_url(path), headers=self._get_headers_all(self.headers))
-            if resp.status_code == 200:
+            if resp.status_code == 200 or 400:
                 return self._parsed_response(resp, success_codes=success_codes)
                 break
             f = f+1
@@ -201,6 +206,10 @@ class _SouthwestSession():
                 'This error usually indicates a rate limiting has kicked in from southwest. '
                 'Wait and try again later.'.format(
                     success_codes, response.status_code))
+        elif response.status_code == 400:
+            print(response.text)
+            print('Problem with this reservation -- check southwest.com.')
+            return response.json()
         elif response.status_code not in success_codes:
             print(response.text)
             raise Exception(
