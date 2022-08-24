@@ -44,7 +44,6 @@ async def request_callback(request: Request):
     # Prints: {'upgrade-insecure-requests': '1', 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/69.0.3494.0 Safari/537.36', 'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'}
     if request.url == "https://mobile.southwest.com/api/security/v4/security/token":
         user.headers = request.headers
-        #logging.info(user.headers)
         await request.continue_()
     else:
         await request.continue_()
@@ -142,6 +141,17 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
         # for flight in trip['_links']:
             passenger = trip['_links']['viewReservationViewPage']['query']
             record_locator = trip['confirmationNumber']
+            #check if we want to skip this one
+            with open('/home/matt/southwest-alerts/sentnotif.txt') as f:
+                 confirm = [line.rstrip() for line in f]
+                 quitloop = False
+                 for c in confirm:
+                      if(c==record_locator):
+                           logging.info('Skipping: %s', record_locator)
+                           quitloop = True 
+                           break 
+            if quitloop:
+                continue
             logging.info('Processing: %s', record_locator)
             # try:
             cancellation_details = southwest.get_cancellation_details(record_locator, passenger['first-name'], passenger['last-name'])
@@ -189,7 +199,7 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                         continue 
                     if matching_flight['fares'] is None:
                         logging.info('This flight is not available for comparison, possible reason: %s', matching_flight['reasonIfUnavailable'])
-                        break
+                        continue
                     else:
                         for faretype,fare in enumerate(matching_flight['fares']):
                             # Check to make sure the flight isnt sold out to avoid NoneType object is not subscriptable error
@@ -248,7 +258,7 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                 if matching_flight['fares'] is None:
                     logging.info('This flight is not available for comparison, possible reason: %s',
                                  matching_flight['reasonIfUnavailable'])
-                    break
+                    continue 
                 else:
                     for faretype, fare in enumerate(matching_flight['fares']):
                      # Check to make sure the flight isnt sold out to avoid NoneType object is not subscriptable error
@@ -281,7 +291,7 @@ def check_for_price_drops(username, password, email, headers, cookies, account):
                 currency=cancellation_details['cancelRefundQuotePage']['tripTotals'][0]['currencyCode']
             )
             logging.info(message)
-            if matching_flights_price > 0 and refund_amount >= 0:
+            if matching_flights_price > 0 and refund_amount > 0:
                 logging.info('Sending email for price drop')
                 notifier.sendNotification(refund_amount, record_locator, origin_airport, destination_airport, departure_date)
 #                resp = requests.post(
